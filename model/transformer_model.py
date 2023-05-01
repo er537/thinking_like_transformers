@@ -50,9 +50,10 @@ class MLP(nn.Module):
         super().__init__()
         self.linear_1 = nn.Linear(model_config['hidden_size'], model_config['mlp_hidden_size'])
         self.linear_2 = nn.Linear(model_config['mlp_hidden_size'], model_config['hidden_size'])
+        self.relu = nn.ReLU()
     
     def forward(self, x):
-        x = self.linear_1(x)
+        x = self.relu(self.linear_1(x))
         x = self.linear_2(x)
         return x
     

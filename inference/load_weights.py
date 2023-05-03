@@ -7,9 +7,7 @@ import numpy as np
 jax.config.update('jax_default_matmul_precision', 'float32')
 
 from tracr.compiler import compiling
-from tracr.rasp import rasp
 import torch
-import torch.nn as nn
 
 from model.transformer_model import TransformerModel
 from inference.algorithms import reverse
@@ -42,7 +40,7 @@ def build_state_dict(model):
     return sd
 
 
-def main(algorithm=reverse()):
+def run_pytorch_inference(input: list, algorithm=reverse()):
     bos = "bos"
     compiled_model = compiling.compile_rasp_to_model(
         algorithm,
@@ -55,9 +53,13 @@ def main(algorithm=reverse()):
     torch_model = TransformerModel(model_config).eval()
     torch_model.load_state_dict(state_dict)
     
-    x = compiled_model.input_encoder.encode(["bos", 5,4,3])
-    out = torch_model(x)
-    ### Activation fn!!
+    x = compiled_model.input_encoder.encode(["bos"] + input)
+    logits = torch_model(x)
+    # decode logits
+    max_output_indices = torch.argmax(logits, dim=1)
+    decoded_output = compiled_model.output_encoder.decode(max_output_indices.tolist())[1:]
+
+    return decoded_output
 
 if __name__=="__main__":
-    main(reverse())
+    run_pytorch_inference([5,4,3])

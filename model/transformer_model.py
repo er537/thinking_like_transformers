@@ -89,4 +89,4 @@ class TokenUnembed(nn.Module):
     def forward(self, x):
         # x: (seq_len, hidden_dim)
         # out: (seq_len, vocab_size_out)
-        return torch.matmul(x, self.unembed)
+        return x

@@ -5,10 +5,12 @@ import jax
 # the compiled model and the RASP program.
 jax.config.update('jax_default_matmul_precision', 'float32')
 from tracr.rasp import rasp
+import torch
 
 def make_length():
   all_true_selector = rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.TRUE)
-  return rasp.SelectorWidth(all_true_selector)
+  widths = rasp.SelectorWidth(all_true_selector)
+  return widths
 
 def reverse():
     length = make_length()  # `length` is not a primitive in our implementation.
@@ -43,3 +45,18 @@ def make_sort_unique():
     positions = rasp.SelectorWidth(count_less_than)
     positions_selector = rasp.Select(positions, rasp.indices, rasp.Comparison.EQ)
     return rasp.Aggregate(positions_selector, rasp.tokens)
+
+def get_decode_fn(algo: str, model_config):
+    def decode_fn(logits, compiled_model):
+        if algo == "reverse":
+            unembed_mat = torch.eye(model_config['hidden_size'], model_config['vocab_size_out'])
+            decoded = torch.argmax(torch.matmul(logits, unembed_mat), dim=1).tolist()
+        else:
+            decoded = []
+            for i in range(logits.shape[0]):
+                out=1/torch.round(logits[i,:], decimals=3)
+                out=int(torch.max(torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)).item()-1)
+                decoded.append(out)
+        return compiled_model.output_encoder.decode(decoded)[1:]
+    
+    return decode_fn

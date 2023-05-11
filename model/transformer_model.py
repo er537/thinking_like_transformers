@@ -7,14 +7,14 @@ class TransformerModel(nn.Module):
         self.token_embed = TokenEmbed(model_config)
         self.pos_embed = PosEmbed(model_config)
         self.layers = nn.ModuleList([TransformerLayer(model_config) for _ in range(model_config['num_layers'])])
-        self.token_unembed = TokenUnembed(model_config)
+        # self.token_unembed = TokenUnembed(model_config)
 
     def forward(self, x):
         x = self.token_embed(x)
         x = x + self.pos_embed(x)
         for layer in self.layers:
             x = layer(x)
-        return self.token_unembed(x)
+        return x
 
 class TransformerLayer(nn.Module):
     def __init__(self, model_config):
@@ -81,12 +81,12 @@ class TokenEmbed(nn.Module):
         # self.embed: (vocab_size, attn_hidden_size)
         return self.embeddings[x, :] # (seq_len, attn_hidden_size)
     
-class TokenUnembed(nn.Module):
-    def __init__(self, model_config):
-        super().__init__()
-        self.unembed = torch.eye(model_config['hidden_size'], model_config['vocab_size_out'])
+# class TokenUnembed(nn.Module):
+#     def __init__(self, model_config):
+#         super().__init__()
+#         self.unembed = torch.eye(model_config['hidden_size'], model_config['vocab_size_out'])
 
-    def forward(self, x):
-        # x: (seq_len, hidden_dim)
-        # out: (seq_len, vocab_size_out)
-        return x
+#     def forward(self, x):
+#         # x: (seq_len, hidden_dim)
+#         # out: (seq_len, vocab_size_out)
+#         return x

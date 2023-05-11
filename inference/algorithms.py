@@ -57,6 +57,6 @@ def get_decode_fn(algo: str, model_config):
                 out=1/torch.round(logits[i,:], decimals=3)
                 out=int(torch.max(torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)).item()-1)
                 decoded.append(out)
-        return compiled_model.output_encoder.decode(decoded)[1:]
+        return ['bos'] + compiled_model.output_encoder.decode(decoded)[1:]
     
     return decode_fn

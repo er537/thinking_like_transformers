@@ -10,7 +10,7 @@ from tracr.compiler import compiling
 import torch
 
 from model.transformer_model import TransformerModel
-from inference.algorithms import reverse
+from inference.algorithms import *
 
 
 def extract_config(model, act_fn = "relu"):
@@ -40,10 +40,10 @@ def build_state_dict(model):
     return sd
 
 
-def run_pytorch_inference(input: list, algorithm=reverse()):
+def run_pytorch_inference(input: list, algo_name: str='reverse'):
     bos = "bos"
     compiled_model = compiling.compile_rasp_to_model(
-        algorithm,
+        eval(f"{algo_name}()"),
         vocab={0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
         max_seq_len=9,
         compiler_bos=bos,
@@ -54,10 +54,10 @@ def run_pytorch_inference(input: list, algorithm=reverse()):
     torch_model.load_state_dict(state_dict)
     
     x = compiled_model.input_encoder.encode(["bos"] + input)
-    logits = torch_model(x)
-    # decode logits
-    max_output_indices = torch.argmax(logits, dim=1)
-    decoded_output = compiled_model.output_encoder.decode(max_output_indices.tolist())[1:]
+    out = torch_model(x)
+    # decode is algorithm specific
+    decode_fn = get_decode_fn(algo_name, model_config)
+    decoded_output = decode_fn(out, compiled_model)
 
     return decoded_output
 

@@ -1,5 +1,3 @@
-import torch
-
 def add_activation_to_dict(name, dict_):
     def hook_fn(module, input, output):
         dict_[name] = output.detach().cpu()
